@@ -15,9 +15,19 @@ import requests
 from .models import Request, Response, AuthManager, AuthObject, auth_manager
 
 
-__all__ = ('request', 'get', 'head', 'post', 'put', 'delete')
+__all__ = ('request', 'get', 'head', 'post', 'put', 'delete')  # __all__ 用法，再core.py中有调用from api.py import *，通过__all__控制引入命名空间。
 
 
+
+# 封装接口的思想，值得学习。request比较出彩的地方之一，在于接口设计的足够简洁清晰。
+# 如果没有get, head, post put delete等接口，将会怎么调用呢？
+#  调用方法将会是这样的：
+#          r = requests.request('http://www.google.com/search', params={'q': 'test'}, headers=heads) 意义不明。
+#  加入没有 request， 调用方法将会是：
+#  r = Request(.....)
+#  r.send()  # 将会有很多重复代码，并且缺少data的检查。
+# 所以封装接口，第一要提供意义明确的接口，第二要减少调用时的重复代码。
+# **kwargs 也不错。
 
 def request(method, url, **kwargs):
     """Sends a `method` request. Returns :class:`Response` object.
@@ -32,7 +42,7 @@ def request(method, url, **kwargs):
     :param auth: (optional) AuthObject to enable Basic HTTP Auth.
     :param timeout: (optional) Float describing the timeout of the request.
     """
-    data = kwargs.pop('data', dict()) or kwargs.pop('params', dict())
+    data = kwargs.pop('data', dict()) or kwargs.pop('params', dict())  # 不错的用法。处理异常了。
 
     r = Request(method=method, url=url, data=data, headers=kwargs.pop('headers', {}),
                 cookiejar=kwargs.pop('cookies', None), files=kwargs.pop('files', None),

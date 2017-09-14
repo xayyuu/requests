@@ -10,16 +10,15 @@ import requests
 import urllib
 import urllib2
 import socket
-import zlib
+import zlib  # compression or decompression
 
 from urllib2 import HTTPError
 from urlparse import urlparse
 
-from .monkeys import Request as _Request, HTTPBasicAuthHandler, HTTPDigestAuthHandler, HTTPRedirectHandler
+from .monkeys import Request as _Request, HTTPBasicAuthHandler, HTTPDigestAuthHandler, HTTPRedirectHandler  # 引入HTTP AUTH认证处理
 from .structures import CaseInsensitiveDict
 from .packages.poster.encode import multipart_encode
-from .packages.poster.streaminghttp import register_openers, get_handlers
-
+from .packages.poster.streaminghttp import register_openers, get_handlers  # 引入别人写好的轮子，自己没有重复造轮子，做好事请的方法之一，就是要学会取长补短。
 
 
 class Request(object):
@@ -42,8 +41,8 @@ class Request(object):
         self.redirect = redirect
 
         # self.data = {}
-        if hasattr(data, 'items'):
-            for (k, v) in data.items():
+        if hasattr(data, 'items'):  # 为啥要用hasattr？是不是字典，不是上面就已经确定了吗。
+            for (k, v) in data.items():  # (k, v) ? k, v? both is ok.
                 self.data.update({
                     k.encode('utf-8') if isinstance(k, unicode) else k:
                     v.encode('utf-8') if isinstance(v, unicode) else v
@@ -51,7 +50,7 @@ class Request(object):
 
         # url encode data if it's a dict
         if hasattr(data, 'items'):
-            self._enc_data = urllib.urlencode(self.data)
+            self._enc_data = urllib.urlencode(self.data)  # Encode a sequence of two-element tuples or dictionary into a URL query string.
         else:
             self._enc_data = data
 
@@ -59,7 +58,7 @@ class Request(object):
         self.response = Response()
 
         if isinstance(auth, (list, tuple)):
-            auth = AuthObject(*auth)
+            auth = AuthObject(*auth)  # *, unpacking elements from iterables.
         if not auth:
             auth = auth_manager.get_auth(self.url)
         self.auth = auth
@@ -67,7 +66,7 @@ class Request(object):
         self.sent = False
 
 
-    def __repr__(self):
+    def __repr__(self):  # 每个类都有repr，为什么？
         return '<Request [%s]>' % (self.method)
 
 
@@ -83,7 +82,7 @@ class Request(object):
         """Deterministic checks for consistency."""
 
         if not self.url:
-            raise URLRequired
+            raise URLRequired  # 自定义异常类型。
 
 
     def _get_opener(self):
@@ -97,13 +96,13 @@ class Request(object):
         if self.auth:
             if not isinstance(self.auth.handler, (urllib2.AbstractBasicAuthHandler, urllib2.AbstractDigestAuthHandler)):
                 auth_manager.add_password(self.auth.realm, self.url, self.auth.username, self.auth.password)
-                self.auth.handler = self.auth.handler(auth_manager)
+                self.auth.handler = self.auth.handler(auth_manager)  # 采用常见的几种auth handler 对auth manger进行处理
                 auth_manager.add_auth(self.url, self.auth)
 
             _handlers.append(self.auth.handler)
 
 
-        _handlers.append(HTTPRedirectHandler)
+        _handlers.append(HTTPRedirectHandler)  # 加上各种各样的handler，值得借鉴，在我们的代码中，是否可以通过这种方式来加handler。
         # print _handlers
         # print '^^'
         # print '!'
@@ -112,14 +111,14 @@ class Request(object):
             return urllib2.urlopen
 
         if self.data or self.files:
-            _handlers.extend(get_handlers())
+            _handlers.extend(get_handlers())  # 调用streamhttp接口，获得更多的handler接口。
 
-        opener = urllib2.build_opener(*_handlers)
+        opener = urllib2.build_opener(*_handlers)  # 列表就用*解压。字典用**解压。first, *middle, last = gradess, *, **的用法。直接传_handlers不好码？为什么要用*？
 
         if self.headers:
             # Allow default headers in the opener to be overloaded
             normal_keys = [k.capitalize() for k in self.headers]
-            for key, val in opener.addheaders[:]:
+            for key, val in opener.addheaders[:]:  # addheaders 是一个列表，其元素为元祖。
                 if key not in normal_keys:
                     continue
                 # Remove it, we have a value to take its place
@@ -137,14 +136,14 @@ class Request(object):
 
             try:
                 response.headers = CaseInsensitiveDict(getattr(resp.info(), 'dict', None))
-                response.content = resp.read()
-            except AttributeError:
+                response.content = resp.read()  # content直接来自于对方的send()
+            except AttributeError:  #
                 pass
 
             if response.headers['content-encoding'] == 'gzip':
                 try:
                     response.content = zlib.decompress(response.content, 16+zlib.MAX_WBITS)
-                except zlib.error:
+                except zlib.error:  # 又忽视了！
                     pass
 
             response.url = getattr(resp, 'url', None)
@@ -158,7 +157,7 @@ class Request(object):
 
         if self.redirect:
 
-            while 'location' in r.headers:
+            while 'location' in r.headers:  # 重定向放在这里处理。
 
                 history.append(r)
 
@@ -181,10 +180,10 @@ class Request(object):
         """Build URLs."""
 
         if urlparse(url).query:
-            return '%s&%s' % (url, data)
+            return '%s&%s' % (url, data)  # 查询形式
         else:
             if data:
-                return '%s?%s' % (url, data)
+                return '%s?%s' % (url, data)  # 参数形式
             else:
                 return url
 
@@ -228,7 +227,7 @@ class Request(object):
                 resp = opener(req)
 
                 if self.cookiejar is not None:
-                    self.cookiejar.extract_cookies(resp, req)
+                    self.cookiejar.extract_cookies(resp, req)  # """Extract cookies from response, where allowable given the request."""
 
             except urllib2.HTTPError, why:
                 self._build_response(why)
@@ -242,7 +241,7 @@ class Request(object):
         else:
             self.response.cached = True
 
-        self.sent = self.response.ok
+        self.sent = self.response.ok  # 较好的命名规范
 
         return self.sent
 
@@ -291,7 +290,7 @@ class Response(object):
 class AuthManager(object):
     """Authentication Manager."""
 
-    def __new__(cls):
+    def __new__(cls):  # 单例模式，只有一个实例。
         singleton = cls.__dict__.get('__singleton__')
         if singleton is not None:
             return singleton
@@ -302,8 +301,8 @@ class AuthManager(object):
 
 
     def __init__(self):
-        self.passwd = {}
-        self._auth = {}
+        self.passwd = {}  # passwd
+        self._auth = {}  # _auth
 
 
     def __repr__(self):
@@ -322,7 +321,7 @@ class AuthManager(object):
             except TypeError:
                 pass
 
-        self._auth[uri] = auth
+        self._auth[uri] = auth  # uri --> auth, dict.
 
 
     def add_password(self, realm, uri, user, passwd):
@@ -339,7 +338,7 @@ class AuthManager(object):
 
 
     def find_user_password(self, realm, authuri):
-        for uris, authinfo in self.passwd.iteritems():
+        for uris, authinfo in self.passwd.iteritems():  # 暴露这个接口的作用了。就是(user, passwd）与uri的对应关系。
             reduced_authuri = self.reduce_uri(authuri, False)
             for uri in uris:
                 if self.is_suburi(uri, reduced_authuri):
@@ -381,7 +380,7 @@ class AuthManager(object):
             if dport is not None:
                 authority = "%s:%d" % (host, dport)
 
-        return authority, path
+        return authority, path  # 返回的是元祖
 
 
     def is_suburi(self, base, test):
@@ -454,11 +453,11 @@ class AuthObject(object):
         self.realm = realm
 
         if isinstance(handler, basestring):
-            self.handler = self._handlers.get(handler.lower(), urllib2.HTTPBasicAuthHandler)
+            self.handler = self._handlers.get(handler.lower(), urllib2.HTTPBasicAuthHandler)  # 字典取值的一种方法，不用写if判断。
         else:
             self.handler = handler
 
-class RequestException(Exception):
+class RequestException(Exception):  # 之所以这样做，就是做有意义的命名。当遇见这个错误，可以提示他人大概是遇见了什么问题。必须有"""doctstring。不然就得用pass。
     """There was an ambiguous exception that occured while handling your
     request."""
 

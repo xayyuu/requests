@@ -26,7 +26,7 @@ try:
 except ImportError:
     pass
 
-if not 'eventlet' in locals():
+if not 'eventlet' in locals():  # locals()返回的是字典，包含当前作用域的局部变量。
     try:
         from gevent import monkey
         monkey.patch_all()
