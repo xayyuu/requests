@@ -1,6 +1,6 @@
 Requests: The Simple (e.g. usable) HTTP Module
 ==============================================
-
+# Logging 很烂吗？意外
 Most existing Python modules for dealing HTTP requests are insane. I have to look up *everything* that I want to do. Most of my worst Python experiences are a result of the various built-in HTTP libraries (yes, even worse than Logging). 
 
 But this one's different. This one's going to be awesome. And simple.
@@ -30,7 +30,7 @@ HTTPS? Basic Authentication? ::
     
     >>> r = requests.get('https://convore.com/api/account/verify.json')
     >>> r.status_code
-    401
+    401  # 有必要熟悉HTTP code，每个code的含义，比如这里，看见401，能知道其语义是“未认证”
 
     
 Uh oh, we're not authorized! Let's add authentication. ::

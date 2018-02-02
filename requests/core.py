@@ -58,7 +58,7 @@ class Request(object):
 		self.method = None
 		self.params = {}
 		self.data = {}
-		self.response = Response()
+		self.response = Response()  # 第二个比较重要的类，负责接收返回值
 		self.auth = None
 		self.sent = False
 		
@@ -68,7 +68,7 @@ class Request(object):
 		except:
 			repr = '<Request object>'
 		return repr
-	
+	# 外部对self.method 赋值，__setattr__，python魔术方法，一般用此类魔术方法更好
 	def __setattr__(self, name, value):
 		if (name == 'method') and (value):
 			if not value in self._METHODS:
@@ -76,7 +76,7 @@ class Request(object):
 		
 		object.__setattr__(self, name, value)
 	
-	
+	# 内部函数，用_开头
 	def _checks(self):
 		"""Deterministic checks for consistiency."""
 
@@ -97,12 +97,13 @@ class Request(object):
 			handler = urllib2.HTTPBasicAuthHandler(authr)
 			opener = urllib2.build_opener(handler)
 
+			# 用了urllib2的方法，有空深究下urllib2的实现原理，画个思路图
 			# use the opener to fetch a URL
 			return opener.open
 		else:
 			return urllib2.urlopen
 
-	
+	# request 这个类，仅仅实现了一个外部函数，就是send
 	def send(self, anyway=False):
 		"""Sends the request. Returns True of successfull, false if not.
 		    If there was an HTTPError during transmission,
@@ -212,6 +213,7 @@ class Response(object):
 	this class.
 	"""
 
+	# Response 类实例就三个东西，headers、content、status_code
 	def __init__(self):
 		self.content = None
 		self.status_code = None
@@ -240,7 +242,7 @@ class AuthObject(object):
 		self.password = password
 
 
-
+# 之所以分这几种方法，因为这几种方法都具备应有的语义
 def get(url, params={}, headers={}, auth=None):
 	"""Sends a GET request. Returns :class:`Response` object.
 
@@ -249,7 +251,7 @@ def get(url, params={}, headers={}, auth=None):
 	:param headers: (optional) Dictionary of HTTP Headers to sent with the :class:`Request`.
 	:param auth: (optional) AuthObject to enable Basic HTTP Auth.
 	"""
-	
+	# 非常简洁，第一个类Request，一切的基础
 	r = Request()
 	
 	r.method = 'GET'
@@ -392,6 +394,7 @@ def _get_autoauth(url):
 			
 	return None
 
+# 为不同的异常准确命名，这很好，注释也是好习惯
 class RequestException(Exception):
 	"""There was an ambiguous exception that occured while handling your request."""
 
