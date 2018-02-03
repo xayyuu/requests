@@ -80,7 +80,7 @@ class Request(object):
         self.response = Response()
         
         self.auth = auth
-        self.cookiejar = cookiejar
+        self.cookiejar = cookiejar  # 新增了对cookie的处理
         self.sent = False
         
         
@@ -108,9 +108,9 @@ class Request(object):
 
         _handlers = []
 
-        if self.auth or self.cookiejar:
+        if self.auth or self.cookiejar:  # 这句处理有点多余，直接if...elif...else也可以
 
-            if self.auth:
+            if self.auth:  # auth使用了urllib2 的类进行处理
 
                 authr = urllib2.HTTPPasswordMgrWithDefaultRealm()
 
@@ -119,7 +119,7 @@ class Request(object):
 
                 _handlers.append(auth_handler)
 
-            if self.cookiejar:
+            if self.cookiejar:  # 增加了对cookiejar的处理
 
                 cookie_handler = urllib2.HTTPCookieProcessor(cookiejar)
                 _handlers.append(cookie_handler)
@@ -217,9 +217,9 @@ class Request(object):
         elif self.method == 'POST':
             if (not self.sent) or anyway:
 
-                if self.files:
+                if self.files:  # 增加了对file的处理
                     register_openers()
-                    datagen, headers = multipart_encode(self.files)
+                    datagen, headers = multipart_encode(self.files)  # 引入了multipart_encode进行编解码，文件上传对headers有特殊处理
                     req = _Request(self.url, data=datagen, headers=headers, method='POST')
 
                     if self.headers:
